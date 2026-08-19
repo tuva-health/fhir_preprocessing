@@ -11,7 +11,9 @@ select
     , onset_date
     , resolved_date
     , status
-    , normalized_code_type
+    , case
+        when normalized_code is not null then code_system
+      end as normalized_code_type
     , normalized_code
     , normalized_description
     , condition_rank
