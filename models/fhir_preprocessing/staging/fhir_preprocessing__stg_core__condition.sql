@@ -11,6 +11,8 @@ select
     , onset_date
     , resolved_date
     , status
+    /* Core 1.0 consolidates source and normalized code systems into code_system.
+       Preserve the legacy normalized type only for successfully normalized codes. */
     , case
         when normalized_code is not null then code_system
       end as normalized_code_type
