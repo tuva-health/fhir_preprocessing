@@ -1,8 +1,3 @@
-{{ config(
-     enabled = var('fhir_preprocessing_enabled',False) | as_bool
-   )
-}}
-
 {% if var('claims_enabled', False) == true and var('clinical_enabled', False) == true -%}
 
 select

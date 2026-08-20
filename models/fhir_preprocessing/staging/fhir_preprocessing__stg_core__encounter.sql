@@ -1,7 +1,3 @@
-{{ config(
-     enabled = var('fhir_preprocessing_enabled',False) | as_bool
-   )
-}}
 select
       person_id
     , encounter_id
