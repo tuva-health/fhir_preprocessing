@@ -1,7 +1,3 @@
-{{ config(
-     enabled = var('fhir_preprocessing_enabled',False) | as_bool
-   )
-}}
 with base as (
 
     select

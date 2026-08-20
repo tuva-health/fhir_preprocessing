@@ -1,7 +1,3 @@
-{{ config(
-     enabled = var('fhir_preprocessing_enabled',False) | as_bool
-   )
-}}
 /* unpivot hcpcs modifier codes into rows to be grouped into a json list for CSV export */
 with hcpcs_modifier_1 as (
 

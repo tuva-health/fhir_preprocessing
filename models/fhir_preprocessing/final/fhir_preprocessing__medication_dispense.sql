@@ -1,7 +1,3 @@
-{{ config(
-     enabled = var('fhir_preprocessing_enabled',False) | as_bool
-   )
-}}
 select
       cast({{ fhir_preprocessing.fhir_patient_internal_id() }} as {{ dbt.type_string() }} ) as patient_internal_id
     , cast(medication_id as {{ dbt.type_string() }} ) as resource_internal_id
