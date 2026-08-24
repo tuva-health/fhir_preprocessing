@@ -1,0 +1,173 @@
+version: 2
+
+unit_tests:
+  - name: test_fhir_coverage_preserves_open_enrollment_period
+    description: An open eligibility span produces a Coverage record with no period end.
+    model: fhir_preprocessing__int_coverage
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__eligibility')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          select
+              'eligibility-open' as eligibility_id
+            , 'person' as person_id
+            , 'member' as member_id
+            , 'commercial' as payer_type
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast(null as date) as enrollment_end_date
+            , 'self' as subscriber_relation
+            , 'subscriber' as subscriber_id
+            , 'source' as data_source
+    expect:
+      rows:
+        - resource_internal_id: 7199d4b91412bddd6f9b8d2f15865256
+          coverage_period_start: '2024-01-01'
+          coverage_period_end: null
+          coverage_status: active
+
+  - name: test_fhir_medical_eob_links_claim_to_open_coverage
+    description: A medical claim links to the open Coverage record when a closed span also matches.
+    model: fhir_preprocessing__int_medical_claim_eob
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__eligibility')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          select
+              'person' as person_id
+            , 'eligibility-open' as eligibility_id
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast(null as date) as enrollment_end_date
+            , 'source' as data_source
+          union all
+          select
+              'person' as person_id
+            , 'eligibility-finite' as eligibility_id
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast('2024-12-31' as date) as enrollment_end_date
+            , 'source' as data_source
+      - input: ref('fhir_preprocessing__stg_core__medical_claim')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select
+              'person' as person_id
+            , 'medical-resource' as medical_claim_id
+            , 'medical-claim' as claim_id
+            , 'professional' as claim_type
+            , 'outpatient' as encounter_group
+            , cast('2024-04-15' as date) as claim_start_date
+            , cast('2024-04-15' as date) as claim_end_date
+            , cast('2024-04-20' as date) as paid_date
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast(null as {{ string_type }}) as billing_npi
+            , cast(null as {{ string_type }}) as billing_name
+            , cast(null as {{ string_type }}) as rendering_npi
+            , cast(null as {{ string_type }}) as rendering_name
+            , 1 as claim_line_number
+            , 'source' as data_source
+      - input: ref('fhir_preprocessing__int_medical_claim_diagnosis')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_diagnosis_list
+      - input: ref('fhir_preprocessing__int_medical_claim_procedure')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_procedure_list
+      - input: ref('fhir_preprocessing__int_medical_claim_supporting_info')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_supporting_info_list
+      - input: ref('fhir_preprocessing__int_medical_claim_item')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_item_list
+      - input: ref('fhir_preprocessing__int_medical_claim_total')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_total_list
+    expect:
+      rows:
+        - resource_internal_id: medical-resource
+          coverage_internal_id: 7199d4b91412bddd6f9b8d2f15865256
+
+  - name: test_fhir_pharmacy_eob_links_claim_to_open_coverage
+    description: A pharmacy claim links to the open Coverage record when a closed span also matches.
+    model: fhir_preprocessing__int_pharmacy_claim_eob
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__eligibility')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          select
+              'person' as person_id
+            , 'eligibility-open' as eligibility_id
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast(null as date) as enrollment_end_date
+            , 'source' as data_source
+          union all
+          select
+              'person' as person_id
+            , 'eligibility-finite' as eligibility_id
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast('2024-12-31' as date) as enrollment_end_date
+            , 'source' as data_source
+      - input: ref('fhir_preprocessing__stg_core__pharmacy_claim')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select
+              'person' as person_id
+            , 'pharmacy-resource' as pharmacy_claim_id
+            , 'pharmacy-claim' as claim_id
+            , cast('2024-04-15' as date) as paid_date
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast(null as {{ string_type }}) as dispensing_provider_id
+            , cast(null as {{ string_type }}) as dispensing_provider_name
+            , 1 as claim_line_number
+            , 'source' as data_source
+      - input: ref('fhir_preprocessing__int_pharmacy_claim_supporting_info')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select 'pharmacy-claim' as claim_id, cast(null as {{ string_type }}) as eob_supporting_info_list
+      - input: ref('fhir_preprocessing__int_pharmacy_claim_item')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select 'pharmacy-claim' as claim_id, cast(null as {{ string_type }}) as eob_item_list
+      - input: ref('fhir_preprocessing__int_pharmacy_claim_total')
+        format: sql
+        rows: |
+          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          select 'pharmacy-claim' as claim_id, cast(null as {{ string_type }}) as eob_total_list
+    expect:
+      rows:
+        - resource_internal_id: pharmacy-resource
+          coverage_internal_id: 7199d4b91412bddd6f9b8d2f15865256
