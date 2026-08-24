@@ -56,7 +56,7 @@ select {% if target.type == 'fabric' %} top 0 {% else %}{% endif %}
     , cast(null as {{ dbt.type_string() }} ) as days_supply
     , cast(null as {{ dbt.type_string() }} ) as refills
     , cast(null as {{ dbt.type_string() }} ) as paid_amount
-    , cast(null as {{ dbt.type_string() }} ) as in_network_flag
+    , cast(null as {{ dbt.type_int() }} ) as in_network_flag
     , cast(null as {{ dbt.type_string() }} ) as ndc_code
     , cast(null as {{ dbt.type_string() }} ) as data_source
 {{ the_tuva_project.limit_zero()}}
