@@ -58,7 +58,9 @@ with eligibility as (
                 , pharmacy_claim.pharmacy_claim_id
             order by
                   eligibility.enrollment_start_date desc
+                , case when eligibility.enrollment_end_date is null then 1 else 0 end desc
                 , eligibility.enrollment_end_date desc
+                , eligibility.eligibility_id
         ) as coverage_row_num
     from {{ ref('fhir_preprocessing__stg_core__pharmacy_claim') }} as pharmacy_claim
         left outer join eligibility
@@ -66,9 +68,11 @@ with eligibility as (
             and pharmacy_claim.data_source = eligibility.data_source
             and pharmacy_claim.payer = eligibility.payer
             and pharmacy_claim.{{ the_tuva_project.quote_column('plan') }} = eligibility.{{ the_tuva_project.quote_column('plan') }}
-            and pharmacy_claim.paid_date
-                between eligibility.enrollment_start_date
-                and eligibility.enrollment_end_date
+            and pharmacy_claim.paid_date >= eligibility.enrollment_start_date
+            and (
+                   eligibility.enrollment_end_date is null
+                or pharmacy_claim.paid_date <= eligibility.enrollment_end_date
+            )
     where pharmacy_claim.claim_line_number = 1 /* filter to claim header */
 
 )

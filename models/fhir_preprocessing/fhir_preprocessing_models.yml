@@ -154,12 +154,14 @@ models:
         description: 'Date the patient''s insurance eligibility began.'
         config:
           meta:
-            data_type: integer
+            data_type: date
       - name: coverage_period_end
-        description: 'Date the patient''s insurance eligibility ended.'
+        description: >
+          Date the patient's insurance eligibility ended. A null value means
+          the coverage period is open and has no known end date.
         config:
           meta:
-            data_type: integer
+            data_type: date
       - name: coverage_relationship
         description: 'The patient''s relationship to the subscriber (e.g., self, spouse,
           child).'

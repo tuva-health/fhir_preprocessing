@@ -105,7 +105,7 @@ select {% if target.type == 'fabric' %} top 0 {% else %}{% endif %}
     , cast(null as {{ dbt.type_string() }} ) as hcpcs_modifier_5
     , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as paid_date
     , cast(null as {{ dbt.type_string() }} ) as paid_amount
-    , cast(null as {{ dbt.type_string() }} ) as in_network_flag
+    , cast(null as {{ dbt.type_int() }} ) as in_network_flag
     , cast(null as {{ dbt.type_string() }} ) as data_source
 {{ the_tuva_project.limit_zero()}}
 

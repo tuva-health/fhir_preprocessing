@@ -82,7 +82,9 @@ with eligibility as (
                 , medical_claim.medical_claim_id
             order by
                   eligibility.enrollment_start_date desc
+                , case when eligibility.enrollment_end_date is null then 1 else 0 end desc
                 , eligibility.enrollment_end_date desc
+                , eligibility.eligibility_id
         ) as coverage_row_num
     from {{ ref('fhir_preprocessing__stg_core__medical_claim') }} as medical_claim
         left outer join eligibility
@@ -90,9 +92,11 @@ with eligibility as (
             and medical_claim.data_source = eligibility.data_source
             and medical_claim.payer = eligibility.payer
             and medical_claim.{{ the_tuva_project.quote_column('plan') }} = eligibility.{{ the_tuva_project.quote_column('plan') }}
-            and medical_claim.claim_start_date
-                between eligibility.enrollment_start_date
-                and eligibility.enrollment_end_date
+            and medical_claim.claim_start_date >= eligibility.enrollment_start_date
+            and (
+                   eligibility.enrollment_end_date is null
+                or medical_claim.claim_start_date <= eligibility.enrollment_end_date
+            )
     where medical_claim.claim_line_number = 1 /* filter to claim header */
 
 )
