@@ -85,6 +85,7 @@ with eligibility as (
             partition by
                   medical_claim.person_id
                 , medical_claim.medical_claim_id
+                , medical_claim.data_source
             order by
                   eligibility.enrollment_start_date desc
                 , case when eligibility.enrollment_end_date is null then 1 else 0 end desc
@@ -133,7 +134,12 @@ with eligibility as (
 
     select
           cast({{ fhir_preprocessing.fhir_patient_internal_id('medical_claim') }} as {{ dbt.type_string() }} ) as patient_internal_id
-        , cast(medical_claim.medical_claim_id as {{ dbt.type_string() }} ) as resource_internal_id
+        /* EOB resources share one FHIR namespace across claim domains and sources. */
+        , cast({{ dbt_utils.generate_surrogate_key([
+              "'medical_claim'"
+            , 'medical_claim.data_source'
+            , 'medical_claim.medical_claim_id'
+          ]) }} as {{ dbt.type_string() }} ) as resource_internal_id
         , cast(medical_claim.claim_id as {{ dbt.type_string() }} ) as unique_claim_id
         , cast(medical_claim.claim_type as {{ dbt.type_string() }} ) as eob_type_code
         , case

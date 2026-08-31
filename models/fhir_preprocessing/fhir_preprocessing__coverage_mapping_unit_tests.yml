@@ -1,0 +1,71 @@
+version: 2
+
+unit_tests:
+  - name: test_fhir_coverage_maps_plan_codes_case_insensitively
+    description: Coverage product mapping lowercases plan text and matches longer plan codes before their prefixes.
+    model: fhir_preprocessing__int_coverage
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__eligibility')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
+          with plans as (
+              select 'pos' as eligibility_id, 'Gold POS Plan' as coverage_plan
+              union all select 'cep', 'CEP'
+              union all select 'hmo', 'HMO'
+              union all select 'mcs', 'MCS'
+              union all select 'mmp', 'MMP'
+              union all select 'mde', 'MDE'
+              union all select 'sn1', 'SN1'
+              union all select 'sn2', 'SN2'
+              union all select 'sn3', 'SN3'
+              union all select 'mli', 'MLI'
+              union all select 'mrb', 'MRB'
+              union all select 'mmo', 'MMO'
+              union all select 'mos', 'MOS'
+              union all select 'mpo', 'MPO'
+              union all select 'mep', 'MEP'
+              union all select 'mp', 'MP'
+              union all select 'mc', 'MC'
+              union all select 'md', 'MD'
+              union all select 'post-acute', 'Post-acute Plan'
+              union all select 'simple-choice', 'Simple Choice'
+          )
+          select
+                eligibility_id
+              , 'person' as person_id
+              , 'member' as member_id
+              , cast(null as {{ string_type }}) as payer_type
+              , 'payer' as payer
+              , coverage_plan as {{ plan_identifier }}
+              , cast('2024-01-01' as date) as enrollment_start_date
+              , cast('2024-12-31' as date) as enrollment_end_date
+              , 'self' as subscriber_relation
+              , 'subscriber' as subscriber_id
+              , 'source' as data_source
+          from plans
+    expect:
+      rows:
+        - {coverage_plan: Gold POS Plan, coverage_type_product: POS}
+        - {coverage_plan: CEP, coverage_type_product: CEP}
+        - {coverage_plan: HMO, coverage_type_product: HMO}
+        - {coverage_plan: MCS, coverage_type_product: MCS}
+        - {coverage_plan: MMP, coverage_type_product: MMP}
+        - {coverage_plan: MDE, coverage_type_product: MDE}
+        - {coverage_plan: SN1, coverage_type_product: SN1}
+        - {coverage_plan: SN2, coverage_type_product: SN2}
+        - {coverage_plan: SN3, coverage_type_product: SN3}
+        - {coverage_plan: MLI, coverage_type_product: MLI}
+        - {coverage_plan: MRB, coverage_type_product: MRB}
+        - {coverage_plan: MMO, coverage_type_product: MMO}
+        - {coverage_plan: MOS, coverage_type_product: MOS}
+        - {coverage_plan: MPO, coverage_type_product: MPO}
+        - {coverage_plan: MEP, coverage_type_product: MEP}
+        - {coverage_plan: MP, coverage_type_product: MP}
+        - {coverage_plan: MC, coverage_type_product: MC}
+        - {coverage_plan: MD, coverage_type_product: MD}
+        - {coverage_plan: Post-acute Plan, coverage_type_product: null}
+        - {coverage_plan: Simple Choice, coverage_type_product: null}

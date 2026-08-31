@@ -121,7 +121,7 @@ unit_tests:
             , cast(null as {{ string_type }}) as eob_total_list
     expect:
       rows:
-        - resource_internal_id: medical-resource
+        - resource_internal_id: 745bd5c327b3d7f3c3d45883efe43136
           coverage_internal_id: 7199d4b91412bddd6f9b8d2f15865256
 
   - name: test_fhir_pharmacy_eob_links_claim_to_open_coverage
@@ -193,5 +193,5 @@ unit_tests:
             , cast(null as {{ string_type }}) as eob_total_list
     expect:
       rows:
-        - resource_internal_id: pharmacy-resource
+        - resource_internal_id: a623632177900da4c3a3d5fceef09c8e
           coverage_internal_id: 7199d4b91412bddd6f9b8d2f15865256

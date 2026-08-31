@@ -33,7 +33,7 @@ models:
         description: 'Unique identifier for each encounter in the dataset.'
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: condition_category
         description: >
           Hard-coded to "encounter-diagnosis" for FHIR mapping requirements
@@ -77,14 +77,14 @@ models:
           (http://hl7.org/fhir/encounter-status).
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: encounter_class_code
         description: >
           Mapped to FHIR requirement based on encounter_group
           (http://terminology.hl7.org/CodeSystem/v3-ActCode).
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: encounter_start_datetime
         description: 'Date when the encounter started.'
         config:
@@ -149,7 +149,7 @@ models:
         description: 'Name of the plan (i.e. sub contract) providing coverage.'
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: coverage_period_start
         description: 'Date the patient''s insurance eligibility began.'
         config:
@@ -167,20 +167,20 @@ models:
           child).'
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: coverage_status
         description: >
           Hard-coded to "active" for FHIR mapping requirements
           (http://hl7.org/fhir/fm-status).
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: coverage_subscriber_id
         description: 'Identifier that links a patient to a particular insurance product
           or health plan.'
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: coverage_type_list
         description: >
           Nested list of coverage product type and medical benefit. Mapped
@@ -188,7 +188,7 @@ models:
           (http://terminology.hl7.org/CodeSystem/v3-ActCode).
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: data_source
         description: 'User-configured field that indicates the data source.'
         config:
@@ -229,7 +229,9 @@ models:
             data_type: varchar
             is_primary_key: true
       - name: resource_internal_id
-        description: Unique identifier for each record in the table.
+        description: >
+          Deterministic identifier generated from the claim domain, source
+          system, and source medical or pharmacy claim identifier.
         config:
           meta:
             data_type: varchar
@@ -258,17 +260,17 @@ models:
           YYYY-MM-DD.'
         config:
           meta:
-            data_type: varchar
+            data_type: date
       - name: eob_billable_period_end
         description: 'End date for the claim.'
         config:
           meta:
-            data_type: varchar
+            data_type: date
       - name: eob_created
         description: 'The date the claim was paid.'
         config:
           meta:
-            data_type: varchar
+            data_type: date
       - name: organization_name
         description: 'Name of the payer (i.e. health insurer) providing coverage.'
         config:
@@ -395,12 +397,12 @@ models:
         description: 'The number of days supply included.'
         config:
           meta:
-            data_type: integer
+            data_type: numeric
       - name: medication_dispense_when_handed_over
         description: 'Date the medication was dispensed.'
         config:
           meta:
-            data_type: varchar
+            data_type: date
       - name: data_source
         description: 'User-configured field that indicates the data source.'
         config:
@@ -452,7 +454,7 @@ models:
         description: 'Unique identifier for each encounter in the dataset.'
         config:
           meta:
-            data_type: integer
+            data_type: varchar
       - name: observation_status
         description: >
           Mapped to FHIR requirement based on lab result status or hard-coded
@@ -496,7 +498,7 @@ models:
         description: 'Normalized units of the lab test.'
         config:
           meta:
-            data_type: number
+            data_type: varchar
       - name: data_source
         description: 'User-configured field that indicates the data source.'
         config:
