@@ -3,6 +3,7 @@ with adjudication as (
     select
           claim_id
         , claim_line_number
+        , data_source
         , eob_item_adjudication_list
     from {{ ref('fhir_preprocessing__int_medical_claim_item_adjudication') }}
 
@@ -13,6 +14,7 @@ with adjudication as (
     select
           claim_id
         , claim_line_number
+        , data_source
         , eob_item_modifier_list
     from {{ ref('fhir_preprocessing__int_medical_claim_item_modifier') }}
 
@@ -22,6 +24,7 @@ with adjudication as (
 
     select
           medical_claim.claim_id
+        , medical_claim.data_source
         /* required for FHIR validation, sequence must be >0, temporary fix for possible issues with ADR  */
         , abs(medical_claim.claim_line_number) as eob_item_sequence
         , medical_claim.revenue_center_code as eob_item_revenue_code
@@ -48,16 +51,18 @@ with adjudication as (
         left outer join adjudication
             on medical_claim.claim_id = adjudication.claim_id
             and medical_claim.claim_line_number = adjudication.claim_line_number
+            and medical_claim.data_source = adjudication.data_source
         left outer join modifier
             on medical_claim.claim_id = modifier.claim_id
             and medical_claim.claim_line_number = modifier.claim_line_number
+            and medical_claim.data_source = modifier.data_source
 
 )
 
 /* create a json string for CSV export */
 {{ the_tuva_project.create_json_object(
     table_ref='joined',
-    group_by_col='claim_id',
+    group_by_col='claim_id, data_source',
     object_col_name='eob_item_list',
     object_col_list=[
         'eob_item_sequence'

@@ -4,6 +4,7 @@ with hcpcs_modifier_1 as (
     select
           claim_id
         , claim_line_number
+        , data_source
         , 'CPT' as eob_item_modifier_system
         , hcpcs_modifier_1 as eob_item_modifier_code
     from {{ ref('fhir_preprocessing__stg_core__medical_claim') }}
@@ -16,6 +17,7 @@ with hcpcs_modifier_1 as (
     select
           claim_id
         , claim_line_number
+        , data_source
         , 'CPT' as eob_item_modifier_system
         , hcpcs_modifier_2 as eob_item_modifier_code
     from {{ ref('fhir_preprocessing__stg_core__medical_claim') }}
@@ -28,6 +30,7 @@ with hcpcs_modifier_1 as (
     select
           claim_id
         , claim_line_number
+        , data_source
         , 'CPT' as eob_item_modifier_system
         , hcpcs_modifier_3 as eob_item_modifier_code
     from {{ ref('fhir_preprocessing__stg_core__medical_claim') }}
@@ -40,6 +43,7 @@ with hcpcs_modifier_1 as (
     select
           claim_id
         , claim_line_number
+        , data_source
         , 'CPT' as eob_item_modifier_system
         , hcpcs_modifier_4 as eob_item_modifier_code
     from {{ ref('fhir_preprocessing__stg_core__medical_claim') }}
@@ -52,6 +56,7 @@ with hcpcs_modifier_1 as (
     select
           claim_id
         , claim_line_number
+        , data_source
         , 'CPT' as eob_item_modifier_system
         , hcpcs_modifier_5 as eob_item_modifier_code
     from {{ ref('fhir_preprocessing__stg_core__medical_claim') }}
@@ -76,7 +81,7 @@ with hcpcs_modifier_1 as (
 /* create a json string for CSV export */
 {{ the_tuva_project.create_json_object(
     table_ref='unioned',
-    group_by_col='claim_id, claim_line_number',
+    group_by_col='claim_id, claim_line_number, data_source',
     object_col_name='eob_item_modifier_list',
     object_col_list=[
         'eob_item_modifier_system'

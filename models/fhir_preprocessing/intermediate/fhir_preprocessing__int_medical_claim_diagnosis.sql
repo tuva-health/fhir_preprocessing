@@ -2,6 +2,7 @@ with staging as (
 
     select
           medical_claim.claim_id
+        , medical_claim.data_source
         , claim_condition.condition_rank as eob_diagnosis_sequence
         , case
             when lower(claim_condition.normalized_code_type) = 'icd-10-cm' then 'ICD10'
@@ -26,6 +27,7 @@ with staging as (
     from {{ ref('fhir_preprocessing__stg_core__medical_claim') }} as medical_claim
         inner join {{ ref('fhir_preprocessing__stg_core__condition') }} as claim_condition
             on medical_claim.claim_id = claim_condition.claim_id
+            and medical_claim.data_source = claim_condition.data_source
     where medical_claim.claim_line_number = 1 /* filter to claim header */
 
 )
@@ -33,7 +35,7 @@ with staging as (
 /* create a json string for CSV export */
 {{ the_tuva_project.create_json_object(
     table_ref='staging',
-    group_by_col='claim_id',
+    group_by_col='claim_id, data_source',
     object_col_name='eob_diagnosis_list',
     object_col_list=[
         'eob_diagnosis_sequence'
