@@ -3,6 +3,7 @@ with adjudication as (
     select
           claim_id
         , claim_line_number
+        , data_source
         , eob_item_adjudication_list
     from {{ ref('fhir_preprocessing__int_pharmacy_claim_item_adjudication') }}
 
@@ -12,6 +13,7 @@ with adjudication as (
 
     select
           pharmacy_claim.claim_id
+        , pharmacy_claim.data_source
         /* required for FHIR validation, sequence must be >0, temporary fix for possible issues with ADR  */
         , abs(pharmacy_claim.claim_line_number) as eob_item_sequence
         , cast('NDC' as {{ dbt.type_string() }} ) as eob_item_product_or_service_system
@@ -25,6 +27,7 @@ with adjudication as (
         left outer join adjudication
             on pharmacy_claim.claim_id = adjudication.claim_id
             and pharmacy_claim.claim_line_number = adjudication.claim_line_number
+            and pharmacy_claim.data_source = adjudication.data_source
     where pharmacy_claim.ndc_code is not null
 
 )
@@ -32,7 +35,7 @@ with adjudication as (
 /* create a json string for CSV export */
 {{ the_tuva_project.create_json_object(
     table_ref='joined',
-    group_by_col='claim_id',
+    group_by_col='claim_id, data_source',
     object_col_name='eob_item_list',
     object_col_list=[
         'eob_item_sequence'

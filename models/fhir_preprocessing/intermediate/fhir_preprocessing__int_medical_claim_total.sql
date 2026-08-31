@@ -2,6 +2,7 @@ with total_amount as (
 
     select
           claim_id
+        , data_source
         , 'ADJ_TYPE' as eob_total_category_system
         , 'benefit' as eob_total_category_code
         , 'USD' as eob_total_amount_currency
@@ -18,6 +19,7 @@ with total_amount as (
 
     select
           claim_id
+        , data_source
         , 'ADJ_STATUS' as eob_total_category_system
         , case
             when in_network_flag = 1 then 'innetwork'
@@ -45,7 +47,7 @@ with total_amount as (
 /* create a json string for CSV export */
 {{ the_tuva_project.create_json_object(
     table_ref='unioned',
-    group_by_col='claim_id',
+    group_by_col='claim_id, data_source',
     object_col_name='eob_total_list',
     object_col_list=[
         'eob_total_category_system'

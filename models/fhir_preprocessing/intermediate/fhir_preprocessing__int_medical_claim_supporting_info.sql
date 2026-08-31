@@ -2,6 +2,7 @@ with admission_period as (
 
     select
           claim_id
+        , data_source
         , 'admissionperiod' as eob_supporting_info_category_code
         , cast(null as {{ dbt.type_string() }} ) as eob_supporting_info_code /* required for union */
         , cast(null as {{ dbt.type_string() }} ) as eob_supporting_info_system /* required for union */
@@ -17,6 +18,7 @@ with admission_period as (
 
     select
           claim_id
+        , data_source
         , 'typeofbill' as eob_supporting_info_category_code
         , bill_type_code as eob_supporting_info_code
         , 'UBTOB' as eob_supporting_info_system
@@ -40,6 +42,7 @@ with admission_period as (
 
     select
           claim_id
+        , data_source
         , eob_supporting_info_category_code
         , eob_supporting_info_code
         , eob_supporting_info_system
@@ -47,7 +50,7 @@ with admission_period as (
         , cast(eob_supporting_info_timing_start as {{ dbt.type_string() }} ) as eob_supporting_info_timing_start
         , cast(eob_supporting_info_timing_end as {{ dbt.type_string() }} ) as eob_supporting_info_timing_end
         , row_number() over(
-            partition by claim_id
+            partition by claim_id, data_source
             order by eob_supporting_info_category_code
           ) as eob_supporting_info_sequence
     from unioned
@@ -57,7 +60,7 @@ with admission_period as (
 /* create a json string for CSV export */
 {{ the_tuva_project.create_json_object(
     table_ref='add_sequence',
-    group_by_col='claim_id',
+    group_by_col='claim_id, data_source',
     object_col_name='eob_supporting_info_list',
     object_col_list=[
         'eob_supporting_info_sequence'

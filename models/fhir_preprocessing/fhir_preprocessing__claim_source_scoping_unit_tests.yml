@@ -1,0 +1,283 @@
+version: 2
+
+unit_tests:
+  - name: test_fhir_medical_diagnosis_keeps_same_claim_id_sources_isolated
+    description: Medical diagnosis aggregation only joins conditions from the matching claim source.
+    model: fhir_preprocessing__int_medical_claim_diagnosis
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__medical_claim')
+        format: sql
+        rows: |
+          select
+              'shared-medical-claim' as claim_id
+            , 1 as claim_line_number
+            , 'source-a' as data_source
+          union all
+          select
+              'shared-medical-claim' as claim_id
+            , 1 as claim_line_number
+            , 'source-b' as data_source
+      - input: ref('fhir_preprocessing__stg_core__condition')
+        format: sql
+        rows: |
+          select
+              'shared-medical-claim' as claim_id
+            , 1 as condition_rank
+            , 'icd-10-cm' as normalized_code_type
+            , 'A123' as normalized_code
+            , 'Source A diagnosis' as normalized_description
+            , 'source-a' as data_source
+    expect:
+      rows:
+        - claim_id: shared-medical-claim
+          data_source: source-a
+
+  - name: test_fhir_medical_procedure_keeps_same_claim_id_sources_isolated
+    description: Medical procedure aggregation only joins procedures from the matching claim source.
+    model: fhir_preprocessing__int_medical_claim_procedure
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__medical_claim')
+        format: sql
+        rows: |
+          select
+              'shared-medical-claim' as claim_id
+            , 1 as claim_line_number
+            , 'source-a' as data_source
+          union all
+          select
+              'shared-medical-claim' as claim_id
+            , 1 as claim_line_number
+            , 'source-b' as data_source
+          union all
+          select
+              'shared-medical-claim' as claim_id
+            , 1 as claim_line_number
+            , 'source-c' as data_source
+      - input: ref('fhir_preprocessing__stg_core__procedure')
+        format: sql
+        rows: |
+          select
+              'procedure-a' as procedure_id
+            , 'shared-medical-claim' as claim_id
+            , 'icd-10-pcs' as normalized_code_type
+            , '0WQF0ZZ' as normalized_code
+            , 'Source A procedure' as normalized_description
+            , 'source-a' as data_source
+          union all
+          select
+              'procedure-b' as procedure_id
+            , 'shared-medical-claim' as claim_id
+            , 'icd-10-pcs' as normalized_code_type
+            , '0WQG0ZZ' as normalized_code
+            , 'Source B procedure' as normalized_description
+            , 'source-b' as data_source
+    expect:
+      rows:
+        - claim_id: shared-medical-claim
+          data_source: source-a
+        - claim_id: shared-medical-claim
+          data_source: source-b
+
+  - name: test_fhir_medical_eob_keeps_same_claim_id_sources_isolated
+    description: Medical EOB component joins do not mix records when two sources reuse a claim ID.
+    model: fhir_preprocessing__int_medical_claim_eob
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__eligibility')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          select
+              'person' as person_id
+            , 'eligibility-a' as eligibility_id
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast('2024-12-31' as date) as enrollment_end_date
+            , 'source-a' as data_source
+          union all
+          select
+              'person' as person_id
+            , 'eligibility-b' as eligibility_id
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast('2024-12-31' as date) as enrollment_end_date
+            , 'source-b' as data_source
+      - input: ref('fhir_preprocessing__stg_core__medical_claim')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
+          select
+              'person' as person_id
+            , 'medical-resource-a' as medical_claim_id
+            , 'shared-medical-claim' as claim_id
+            , 'professional' as claim_type
+            , 'outpatient' as encounter_group
+            , cast('2024-04-15' as date) as claim_start_date
+            , cast('2024-04-15' as date) as claim_end_date
+            , cast('2024-04-20' as date) as paid_date
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast(null as {{ string_type }}) as billing_npi
+            , cast(null as {{ string_type }}) as billing_name
+            , cast(null as {{ string_type }}) as rendering_npi
+            , cast(null as {{ string_type }}) as rendering_name
+            , 1 as claim_line_number
+            , 'source-a' as data_source
+          union all
+          select
+              'person' as person_id
+            , 'medical-resource-b' as medical_claim_id
+            , 'shared-medical-claim' as claim_id
+            , 'professional' as claim_type
+            , 'outpatient' as encounter_group
+            , cast('2024-04-15' as date) as claim_start_date
+            , cast('2024-04-15' as date) as claim_end_date
+            , cast('2024-04-20' as date) as paid_date
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast(null as {{ string_type }}) as billing_npi
+            , cast(null as {{ string_type }}) as billing_name
+            , cast(null as {{ string_type }}) as rendering_npi
+            , cast(null as {{ string_type }}) as rendering_name
+            , 1 as claim_line_number
+            , 'source-b' as data_source
+      - input: ref('fhir_preprocessing__int_medical_claim_diagnosis')
+        format: sql
+        rows: |
+          select 'shared-medical-claim' as claim_id, 'source-a' as data_source, 'diagnosis-a' as eob_diagnosis_list
+          union all
+          select 'shared-medical-claim' as claim_id, 'source-b' as data_source, 'diagnosis-b' as eob_diagnosis_list
+      - input: ref('fhir_preprocessing__int_medical_claim_procedure')
+        format: sql
+        rows: |
+          select 'shared-medical-claim' as claim_id, 'source-a' as data_source, 'procedure-a' as eob_procedure_list
+          union all
+          select 'shared-medical-claim' as claim_id, 'source-b' as data_source, 'procedure-b' as eob_procedure_list
+      - input: ref('fhir_preprocessing__int_medical_claim_supporting_info')
+        format: sql
+        rows: |
+          select 'shared-medical-claim' as claim_id, 'source-a' as data_source, 'supporting-a' as eob_supporting_info_list
+          union all
+          select 'shared-medical-claim' as claim_id, 'source-b' as data_source, 'supporting-b' as eob_supporting_info_list
+      - input: ref('fhir_preprocessing__int_medical_claim_item')
+        format: sql
+        rows: |
+          select 'shared-medical-claim' as claim_id, 'source-a' as data_source, 'item-a' as eob_item_list
+          union all
+          select 'shared-medical-claim' as claim_id, 'source-b' as data_source, 'item-b' as eob_item_list
+      - input: ref('fhir_preprocessing__int_medical_claim_total')
+        format: sql
+        rows: |
+          select 'shared-medical-claim' as claim_id, 'source-a' as data_source, 'total-a' as eob_total_list
+          union all
+          select 'shared-medical-claim' as claim_id, 'source-b' as data_source, 'total-b' as eob_total_list
+    expect:
+      rows:
+        - resource_internal_id: medical-resource-a
+          eob_diagnosis_list: diagnosis-a
+          eob_procedure_list: procedure-a
+          eob_supporting_info_list: supporting-a
+          eob_item_list: item-a
+          eob_total_list: total-a
+          data_source: source-a
+        - resource_internal_id: medical-resource-b
+          eob_diagnosis_list: diagnosis-b
+          eob_procedure_list: procedure-b
+          eob_supporting_info_list: supporting-b
+          eob_item_list: item-b
+          eob_total_list: total-b
+          data_source: source-b
+
+  - name: test_fhir_pharmacy_eob_keeps_same_claim_id_sources_isolated
+    description: Pharmacy EOB component joins do not mix records when two sources reuse a claim ID.
+    model: fhir_preprocessing__int_pharmacy_claim_eob
+    config:
+      enabled: "{{ var('claims_enabled', false) | as_bool }}"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__eligibility')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          select
+              'person' as person_id
+            , 'eligibility-a' as eligibility_id
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast('2024-12-31' as date) as enrollment_end_date
+            , 'source-a' as data_source
+          union all
+          select
+              'person' as person_id
+            , 'eligibility-b' as eligibility_id
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast('2024-01-01' as date) as enrollment_start_date
+            , cast('2024-12-31' as date) as enrollment_end_date
+            , 'source-b' as data_source
+      - input: ref('fhir_preprocessing__stg_core__pharmacy_claim')
+        format: sql
+        rows: |
+          {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
+          select
+              'person' as person_id
+            , 'pharmacy-resource-a' as pharmacy_claim_id
+            , 'shared-pharmacy-claim' as claim_id
+            , cast('2024-04-15' as date) as paid_date
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast(null as {{ string_type }}) as dispensing_provider_id
+            , cast(null as {{ string_type }}) as dispensing_provider_name
+            , 1 as claim_line_number
+            , 'source-a' as data_source
+          union all
+          select
+              'person' as person_id
+            , 'pharmacy-resource-b' as pharmacy_claim_id
+            , 'shared-pharmacy-claim' as claim_id
+            , cast('2024-04-15' as date) as paid_date
+            , 'payer' as payer
+            , 'plan' as {{ plan_identifier }}
+            , cast(null as {{ string_type }}) as dispensing_provider_id
+            , cast(null as {{ string_type }}) as dispensing_provider_name
+            , 1 as claim_line_number
+            , 'source-b' as data_source
+      - input: ref('fhir_preprocessing__int_pharmacy_claim_supporting_info')
+        format: sql
+        rows: |
+          select 'shared-pharmacy-claim' as claim_id, 'source-a' as data_source, 'supporting-a' as eob_supporting_info_list
+          union all
+          select 'shared-pharmacy-claim' as claim_id, 'source-b' as data_source, 'supporting-b' as eob_supporting_info_list
+      - input: ref('fhir_preprocessing__int_pharmacy_claim_item')
+        format: sql
+        rows: |
+          select 'shared-pharmacy-claim' as claim_id, 'source-a' as data_source, 'item-a' as eob_item_list
+          union all
+          select 'shared-pharmacy-claim' as claim_id, 'source-b' as data_source, 'item-b' as eob_item_list
+      - input: ref('fhir_preprocessing__int_pharmacy_claim_total')
+        format: sql
+        rows: |
+          select 'shared-pharmacy-claim' as claim_id, 'source-a' as data_source, 'total-a' as eob_total_list
+          union all
+          select 'shared-pharmacy-claim' as claim_id, 'source-b' as data_source, 'total-b' as eob_total_list
+    expect:
+      rows:
+        - resource_internal_id: pharmacy-resource-a
+          eob_supporting_info_list: supporting-a
+          eob_item_list: item-a
+          eob_total_list: total-a
+          data_source: source-a
+        - resource_internal_id: pharmacy-resource-b
+          eob_supporting_info_list: supporting-b
+          eob_item_list: item-b
+          eob_total_list: total-b
+          data_source: source-b

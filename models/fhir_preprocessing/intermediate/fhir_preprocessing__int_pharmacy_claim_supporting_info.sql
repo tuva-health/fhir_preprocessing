@@ -2,6 +2,7 @@ with days_supply as (
 
     select
           claim_id
+        , data_source
         , 'dayssupply' as eob_supporting_info_category_code
         , cast(days_supply as {{ dbt.type_string() }} ) as eob_supporting_info_value_quantity /* cast as string for union */
         , cast(null as {{ dbt.type_string() }} ) as eob_supporting_info_code /* required for union */
@@ -16,6 +17,7 @@ with days_supply as (
 
     select
           claim_id
+        , data_source
         , 'refillnum' as eob_supporting_info_category_code
         , cast(refills as {{ dbt.type_string() }} ) as eob_supporting_info_value_quantity /* cast as string for union */
         , cast(null as {{ dbt.type_string() }} ) as eob_supporting_info_code /* required for union */
@@ -34,6 +36,7 @@ with days_supply as (
 
     select
           claim_id
+        , data_source
         , 'dawcode' as eob_supporting_info_category_code
         , cast(null as {{ dbt.type_string() }} ) as eob_supporting_info_value_quantity /* cast as string for union */
         , '0' as eob_supporting_info_code
@@ -56,12 +59,13 @@ with days_supply as (
 , add_sequence as (
     select
           claim_id
+        , data_source
         , eob_supporting_info_category_code
         , cast(eob_supporting_info_value_quantity as {{ dbt.type_numeric() }} ) as eob_supporting_info_value_quantity
         , eob_supporting_info_code
         , eob_supporting_info_system
         , row_number() over(
-            partition by claim_id
+            partition by claim_id, data_source
             order by eob_supporting_info_category_code
           ) as eob_supporting_info_sequence
     from unioned
@@ -70,7 +74,7 @@ with days_supply as (
 /* create a json string for CSV export */
 {{ the_tuva_project.create_json_object(
     table_ref='add_sequence',
-    group_by_col='claim_id',
+    group_by_col='claim_id, data_source',
     object_col_name='eob_supporting_info_list',
     object_col_list=[
         'eob_supporting_info_sequence'

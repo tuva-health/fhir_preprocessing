@@ -16,6 +16,7 @@ with eligibility as (
 
     select
           claim_id
+        , data_source
         , eob_diagnosis_list
     from {{ ref('fhir_preprocessing__int_medical_claim_diagnosis') }}
 
@@ -25,6 +26,7 @@ with eligibility as (
 
     select
           claim_id
+        , data_source
         , eob_procedure_list
     from {{ ref('fhir_preprocessing__int_medical_claim_procedure') }}
 
@@ -34,6 +36,7 @@ with eligibility as (
 
     select
           claim_id
+        , data_source
         , eob_supporting_info_list
     from {{ ref('fhir_preprocessing__int_medical_claim_supporting_info') }}
 
@@ -43,6 +46,7 @@ with eligibility as (
 
     select
           claim_id
+        , data_source
         , eob_item_list
     from {{ ref('fhir_preprocessing__int_medical_claim_item') }}
 
@@ -52,6 +56,7 @@ with eligibility as (
 
     select
           claim_id
+        , data_source
         , eob_total_list
     from {{ ref('fhir_preprocessing__int_medical_claim_total') }}
 
@@ -163,14 +168,19 @@ with eligibility as (
     from dedupe as medical_claim
         left outer join claim_diagnosis
             on medical_claim.claim_id = claim_diagnosis.claim_id
+            and medical_claim.data_source = claim_diagnosis.data_source
         left outer join claim_procedure
             on medical_claim.claim_id = claim_procedure.claim_id
+            and medical_claim.data_source = claim_procedure.data_source
         left outer join claim_supporting_info
             on medical_claim.claim_id = claim_supporting_info.claim_id
+            and medical_claim.data_source = claim_supporting_info.data_source
         left outer join claim_item
             on medical_claim.claim_id = claim_item.claim_id
+            and medical_claim.data_source = claim_item.data_source
         left outer join claim_total
             on medical_claim.claim_id = claim_total.claim_id
+            and medical_claim.data_source = claim_total.data_source
 
 )
 

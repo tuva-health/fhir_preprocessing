@@ -16,6 +16,7 @@ with eligibility as (
 
     select
           claim_id
+        , data_source
         , eob_supporting_info_list
     from {{ ref('fhir_preprocessing__int_pharmacy_claim_supporting_info') }}
 
@@ -25,6 +26,7 @@ with eligibility as (
 
     select
           claim_id
+        , data_source
         , eob_item_list
     from {{ ref('fhir_preprocessing__int_pharmacy_claim_item') }}
 
@@ -34,6 +36,7 @@ with eligibility as (
 
     select
           claim_id
+        , data_source
         , eob_total_list
     from {{ ref('fhir_preprocessing__int_pharmacy_claim_total') }}
 
@@ -125,10 +128,13 @@ with eligibility as (
     from dedupe as pharmacy_claim
         left outer join claim_supporting_info
             on pharmacy_claim.claim_id = claim_supporting_info.claim_id
+            and pharmacy_claim.data_source = claim_supporting_info.data_source
         left outer join claim_item
             on pharmacy_claim.claim_id = claim_item.claim_id
+            and pharmacy_claim.data_source = claim_item.data_source
         left outer join claim_total
             on pharmacy_claim.claim_id = claim_total.claim_id
+            and pharmacy_claim.data_source = claim_total.data_source
 
 )
 

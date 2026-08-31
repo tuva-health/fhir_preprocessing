@@ -2,9 +2,10 @@ with add_sequence as (
 
     select
           claim_id
+        , data_source
         , procedure_id
         , row_number() over(
-            partition by claim_id
+            partition by claim_id, data_source
             order by procedure_id
           ) as eob_procedure_sequence
     from {{ ref('fhir_preprocessing__stg_core__procedure') }}
@@ -15,6 +16,7 @@ with add_sequence as (
 
     select
           medical_claim.claim_id
+        , medical_claim.data_source
         , add_sequence.eob_procedure_sequence
         , case
             when lower(claim_procedure.normalized_code_type) = 'icd-10-pcs' then 'ICD10PCS'
@@ -29,8 +31,10 @@ with add_sequence as (
     from {{ ref('fhir_preprocessing__stg_core__medical_claim') }} as medical_claim
         inner join {{ ref('fhir_preprocessing__stg_core__procedure') }} as claim_procedure
             on medical_claim.claim_id = claim_procedure.claim_id
+            and medical_claim.data_source = claim_procedure.data_source
         inner join add_sequence
             on claim_procedure.claim_id = add_sequence.claim_id
+            and claim_procedure.data_source = add_sequence.data_source
             and claim_procedure.procedure_id = add_sequence.procedure_id
     where medical_claim.claim_line_number = 1 /* filter to claim header */
     and lower(claim_procedure.normalized_code_type) in ('icd-9-pcs', 'icd-10-pcs')
@@ -40,7 +44,7 @@ with add_sequence as (
 /* create a json string for CSV export */
 {{ the_tuva_project.create_json_object(
     table_ref='staging',
-    group_by_col='claim_id',
+    group_by_col='claim_id, data_source',
     object_col_name='eob_procedure_list',
     object_col_list=[
         'eob_procedure_sequence'
