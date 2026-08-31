@@ -61,7 +61,7 @@ unit_tests:
         format: sql
         rows: |
           {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select
               'person' as person_id
             , 'medical-resource' as medical_claim_id
@@ -82,27 +82,27 @@ unit_tests:
       - input: ref('fhir_preprocessing__int_medical_claim_diagnosis')
         format: sql
         rows: |
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_diagnosis_list
       - input: ref('fhir_preprocessing__int_medical_claim_procedure')
         format: sql
         rows: |
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_procedure_list
       - input: ref('fhir_preprocessing__int_medical_claim_supporting_info')
         format: sql
         rows: |
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_supporting_info_list
       - input: ref('fhir_preprocessing__int_medical_claim_item')
         format: sql
         rows: |
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_item_list
       - input: ref('fhir_preprocessing__int_medical_claim_total')
         format: sql
         rows: |
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select 'medical-claim' as claim_id, cast(null as {{ string_type }}) as eob_total_list
     expect:
       rows:
@@ -140,7 +140,7 @@ unit_tests:
         format: sql
         rows: |
           {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select
               'person' as person_id
             , 'pharmacy-resource' as pharmacy_claim_id
@@ -155,17 +155,17 @@ unit_tests:
       - input: ref('fhir_preprocessing__int_pharmacy_claim_supporting_info')
         format: sql
         rows: |
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select 'pharmacy-claim' as claim_id, cast(null as {{ string_type }}) as eob_supporting_info_list
       - input: ref('fhir_preprocessing__int_pharmacy_claim_item')
         format: sql
         rows: |
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select 'pharmacy-claim' as claim_id, cast(null as {{ string_type }}) as eob_item_list
       - input: ref('fhir_preprocessing__int_pharmacy_claim_total')
         format: sql
         rows: |
-          {% set string_type = 'string' if target.type == 'bigquery' else 'varchar' %}
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select 'pharmacy-claim' as claim_id, cast(null as {{ string_type }}) as eob_total_list
     expect:
       rows:
