@@ -21,26 +21,31 @@ with base as (
 
     select
           *
-        , concat(
-              ' '
-            , replace(
+        , replace(
+              replace(
+                replace(
                   replace(
                     replace(
                       replace(
                         replace(
-                          replace(
-                            replace(
-                              replace(lower(coalesce(coverage_plan, '')), '-', ' ')
-                            , '_', ' ')
-                          , '/', ' ')
-                        , '.', ' ')
-                      , ',', ' ')
-                    , '(', ' ')
-                  , ')', ' ')
-                , '&', ' ')
-            , ' '
-          ) as coverage_plan_tokens
+                          replace(lower(coalesce(coverage_plan, '')), '-', ' ')
+                        , '_', ' ')
+                      , '/', ' ')
+                    , '.', ' ')
+                  , ',', ' ')
+                , '(', ' ')
+              , ')', ' ')
+            , '&', ' ') as normalized_plan
     from base
+
+)
+
+, tokenize_plan as (
+
+    select
+          *
+        , {{ dbt.concat(["' '", "normalized_plan", "' '"]) }} as coverage_plan_tokens
+    from normalize_plan
 
 )
 
@@ -84,7 +89,7 @@ with base as (
             when coverage_plan_tokens like '% mc %' then 'MC'
             when coverage_plan_tokens like '% md %' then 'MD'
           end as coverage_type_product
-    from normalize_plan
+    from tokenize_plan
 
 )
 
