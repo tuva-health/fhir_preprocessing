@@ -1,6 +1,12 @@
 select
       cast({{ fhir_preprocessing.fhir_patient_internal_id() }} as {{ dbt.type_string() }} ) as patient_internal_id
-    , cast(medication_id as {{ dbt.type_string() }} ) as resource_internal_id
+    , cast({{ the_tuva_project.stable_id_hash([
+          "'fhir medication dispense'"
+        , 'medication_id'
+        , 'source_type'
+        , 'data_source'
+      ]) }} as {{ dbt.type_string() }} ) as resource_internal_id
+    , cast(source_type as {{ dbt.type_string() }} ) as source_type
     , 'completed' as medication_dispense_status
     , case
         when ndc_code is not null then 'NDC'

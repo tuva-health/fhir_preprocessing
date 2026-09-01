@@ -352,25 +352,40 @@ models:
       tags: fhir_preprocessing
       materialized: table
     description: Final mapping for Medication Dispense FHIR resource.
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - patient_internal_id
-              - resource_internal_id
     columns:
       - name: patient_internal_id
         description: 'Internal FHIR patient identifier generated from person_id and data_source so patient references match the core patient table grain.'
         config:
           meta:
             data_type: varchar
-            is_primary_key: true
       - name: resource_internal_id
-        description: Unique identifier for each record in the table.
+        description: >-
+          Collision-safe deterministic FHIR resource identifier generated from
+          the medication domain, medication_id, source_type, and data_source.
+          This remains unique when clinical and claims medication records reuse
+          the same source identifier.
+        tests:
+          - not_null
+          - unique
         config:
           meta:
             data_type: varchar
             is_primary_key: true
+      - name: source_type
+        description: >-
+          Indicates whether the medication record came from claims or clinical
+          data. This is part of the source medication grain used to generate
+          resource_internal_id.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - claims
+                  - clinical
+        config:
+          meta:
+            data_type: varchar
       - name: medication_dispense_status
         description: >
           Hard-coded to "completed" for FHIR mapping requirements
