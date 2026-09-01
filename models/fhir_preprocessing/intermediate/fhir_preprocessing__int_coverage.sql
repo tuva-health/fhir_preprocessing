@@ -17,6 +17,38 @@ with base as (
 
 )
 
+, normalize_plan as (
+
+    select
+          *
+        , replace(
+              replace(
+                replace(
+                  replace(
+                    replace(
+                      replace(
+                        replace(
+                          replace(lower(coalesce(coverage_plan, '')), '-', ' ')
+                        , '_', ' ')
+                      , '/', ' ')
+                    , '.', ' ')
+                  , ',', ' ')
+                , '(', ' ')
+              , ')', ' ')
+            , '&', ' ') as normalized_plan
+    from base
+
+)
+
+, tokenize_plan as (
+
+    select
+          *
+        , {{ dbt.concat(["' '", "normalized_plan", "' '"]) }} as coverage_plan_tokens
+    from normalize_plan
+
+)
+
 /* Map to standardized codes for product type */
 , add_product as (
 
@@ -37,26 +69,27 @@ with base as (
             when lower(payer_type) like '%self%' then 'PPO'
             when lower(payer_type) like '%medicare%' then 'MCR'
             when lower(payer_type) like '%medicaid%' then 'MCD'
-            when lower(coverage_plan) like '%pos&' then 'POS'
-            when lower(coverage_plan) like '%cep%' then 'CEP'
-            when lower(coverage_plan) like '%hmo%' then 'HMO'
-            when lower(coverage_plan) like '%MP%' then 'MP'
-            when lower(coverage_plan) like '%MC%' then 'MC'
-            when lower(coverage_plan) like '%SN1%' then 'SN1'
-            when lower(coverage_plan) like '%SN2%' then 'SN2'
-            when lower(coverage_plan) like '%SN3%' then 'SN3'
-            when lower(coverage_plan) like '%MCS%' then 'MCS'
-            when lower(coverage_plan) like '%MMP%' then 'MMP'
-            when lower(coverage_plan) like '%MDE%' then 'MDE'
-            when lower(coverage_plan) like '%MD%' then 'MD'
-            when lower(coverage_plan) like '%MLI%' then 'MLI'
-            when lower(coverage_plan) like '%MRB%' then 'MRB'
-            when lower(coverage_plan) like '%MMO%' then 'MMO'
-            when lower(coverage_plan) like '%MOS%' then 'MOS'
-            when lower(coverage_plan) like '%MPO%' then 'MPO'
-            when lower(coverage_plan) like '%MEP%' then 'MEP'
+            when coverage_plan_tokens like '% pos %' then 'POS'
+            when coverage_plan_tokens like '% cep %' then 'CEP'
+            when coverage_plan_tokens like '% hmo %' then 'HMO'
+            /* Match specific codes before their shorter prefixes. */
+            when coverage_plan_tokens like '% mcs %' then 'MCS'
+            when coverage_plan_tokens like '% mmp %' then 'MMP'
+            when coverage_plan_tokens like '% mde %' then 'MDE'
+            when coverage_plan_tokens like '% sn1 %' then 'SN1'
+            when coverage_plan_tokens like '% sn2 %' then 'SN2'
+            when coverage_plan_tokens like '% sn3 %' then 'SN3'
+            when coverage_plan_tokens like '% mli %' then 'MLI'
+            when coverage_plan_tokens like '% mrb %' then 'MRB'
+            when coverage_plan_tokens like '% mmo %' then 'MMO'
+            when coverage_plan_tokens like '% mos %' then 'MOS'
+            when coverage_plan_tokens like '% mpo %' then 'MPO'
+            when coverage_plan_tokens like '% mep %' then 'MEP'
+            when coverage_plan_tokens like '% mp %' then 'MP'
+            when coverage_plan_tokens like '% mc %' then 'MC'
+            when coverage_plan_tokens like '% md %' then 'MD'
           end as coverage_type_product
-    from base
+    from tokenize_plan
 
 )
 

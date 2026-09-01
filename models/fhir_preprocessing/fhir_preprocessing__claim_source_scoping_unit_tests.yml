@@ -83,7 +83,7 @@ unit_tests:
           data_source: source-b
 
   - name: test_fhir_medical_eob_keeps_same_claim_id_sources_isolated
-    description: Medical EOB component joins do not mix records when two sources reuse a claim ID.
+    description: Medical EOB component joins and resource IDs remain isolated when two sources reuse claim identifiers.
     model: fhir_preprocessing__int_medical_claim_eob
     config:
       enabled: "{{ var('claims_enabled', false) | as_bool }}"
@@ -116,7 +116,7 @@ unit_tests:
           {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select
               'person' as person_id
-            , 'medical-resource-a' as medical_claim_id
+            , 'shared-eob-resource' as medical_claim_id
             , 'shared-medical-claim' as claim_id
             , 'professional' as claim_type
             , 'outpatient' as encounter_group
@@ -134,7 +134,7 @@ unit_tests:
           union all
           select
               'person' as person_id
-            , 'medical-resource-b' as medical_claim_id
+            , 'shared-eob-resource' as medical_claim_id
             , 'shared-medical-claim' as claim_id
             , 'professional' as claim_type
             , 'outpatient' as encounter_group
@@ -181,14 +181,14 @@ unit_tests:
           select 'shared-medical-claim' as claim_id, 'source-b' as data_source, 'total-b' as eob_total_list
     expect:
       rows:
-        - resource_internal_id: medical-resource-a
+        - resource_internal_id: ba9ac04d34f77b2159a7e6b3f88a7a82
           eob_diagnosis_list: diagnosis-a
           eob_procedure_list: procedure-a
           eob_supporting_info_list: supporting-a
           eob_item_list: item-a
           eob_total_list: total-a
           data_source: source-a
-        - resource_internal_id: medical-resource-b
+        - resource_internal_id: 31f9c2c7555005207601cde10b00cdbf
           eob_diagnosis_list: diagnosis-b
           eob_procedure_list: procedure-b
           eob_supporting_info_list: supporting-b
@@ -197,7 +197,7 @@ unit_tests:
           data_source: source-b
 
   - name: test_fhir_pharmacy_eob_keeps_same_claim_id_sources_isolated
-    description: Pharmacy EOB component joins do not mix records when two sources reuse a claim ID.
+    description: Pharmacy EOB component joins and resource IDs remain isolated across sources and from the medical EOB domain.
     model: fhir_preprocessing__int_pharmacy_claim_eob
     config:
       enabled: "{{ var('claims_enabled', false) | as_bool }}"
@@ -230,7 +230,7 @@ unit_tests:
           {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
           select
               'person' as person_id
-            , 'pharmacy-resource-a' as pharmacy_claim_id
+            , 'shared-eob-resource' as pharmacy_claim_id
             , 'shared-pharmacy-claim' as claim_id
             , cast('2024-04-15' as date) as paid_date
             , 'payer' as payer
@@ -242,7 +242,7 @@ unit_tests:
           union all
           select
               'person' as person_id
-            , 'pharmacy-resource-b' as pharmacy_claim_id
+            , 'shared-eob-resource' as pharmacy_claim_id
             , 'shared-pharmacy-claim' as claim_id
             , cast('2024-04-15' as date) as paid_date
             , 'payer' as payer
@@ -271,12 +271,12 @@ unit_tests:
           select 'shared-pharmacy-claim' as claim_id, 'source-b' as data_source, 'total-b' as eob_total_list
     expect:
       rows:
-        - resource_internal_id: pharmacy-resource-a
+        - resource_internal_id: 35d90377926172df081a639a00fe714d
           eob_supporting_info_list: supporting-a
           eob_item_list: item-a
           eob_total_list: total-a
           data_source: source-a
-        - resource_internal_id: pharmacy-resource-b
+        - resource_internal_id: 014033ac82bc59c7c965c418c506f153
           eob_supporting_info_list: supporting-b
           eob_item_list: item-b
           eob_total_list: total-b

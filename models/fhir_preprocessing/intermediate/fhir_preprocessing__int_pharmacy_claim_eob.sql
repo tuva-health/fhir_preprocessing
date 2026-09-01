@@ -59,6 +59,7 @@ with eligibility as (
             partition by
                   pharmacy_claim.person_id
                 , pharmacy_claim.pharmacy_claim_id
+                , pharmacy_claim.data_source
             order by
                   eligibility.enrollment_start_date desc
                 , case when eligibility.enrollment_end_date is null then 1 else 0 end desc
@@ -101,7 +102,12 @@ with eligibility as (
 
     select
           cast({{ fhir_preprocessing.fhir_patient_internal_id('pharmacy_claim') }} as {{ dbt.type_string() }} ) as patient_internal_id
-        , cast(pharmacy_claim.pharmacy_claim_id as {{ dbt.type_string() }} ) as resource_internal_id
+        /* EOB resources share one FHIR namespace across claim domains and sources. */
+        , cast({{ dbt_utils.generate_surrogate_key([
+              "'pharmacy_claim'"
+            , 'pharmacy_claim.data_source'
+            , 'pharmacy_claim.pharmacy_claim_id'
+          ]) }} as {{ dbt.type_string() }} ) as resource_internal_id
         , cast(pharmacy_claim.claim_id as {{ dbt.type_string() }} ) as unique_claim_id
         , 'pharmacy' as eob_type_code
         , cast(null as {{ dbt.type_string() }} ) as eob_subtype_code /* required for union with medical eob */
