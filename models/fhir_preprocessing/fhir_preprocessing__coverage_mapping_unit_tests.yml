@@ -12,7 +12,19 @@ unit_tests:
         rows: |
           {% set plan_identifier = '[plan]' if target.type in ['fabric', 'sqlserver'] else '`plan`' if target.type == 'bigquery' else 'plan' %}
           {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar' %}
-          with plans as (
+          select
+                eligibility_id
+              , 'person' as person_id
+              , 'member' as member_id
+              , cast(null as {{ string_type }}) as payer_type
+              , 'payer' as payer
+              , coverage_plan as {{ plan_identifier }}
+              , cast('2024-01-01' as date) as enrollment_start_date
+              , cast('2024-12-31' as date) as enrollment_end_date
+              , 'self' as subscriber_relation
+              , 'subscriber' as subscriber_id
+              , 'source' as data_source
+          from (
               select 'pos' as eligibility_id, 'Gold POS Plan' as coverage_plan
               union all select 'cep', 'CEP'
               union all select 'hmo', 'HMO'
@@ -33,20 +45,7 @@ unit_tests:
               union all select 'md', 'MD'
               union all select 'post-acute', 'Post-acute Plan'
               union all select 'simple-choice', 'Simple Choice'
-          )
-          select
-                eligibility_id
-              , 'person' as person_id
-              , 'member' as member_id
-              , cast(null as {{ string_type }}) as payer_type
-              , 'payer' as payer
-              , coverage_plan as {{ plan_identifier }}
-              , cast('2024-01-01' as date) as enrollment_start_date
-              , cast('2024-12-31' as date) as enrollment_end_date
-              , 'self' as subscriber_relation
-              , 'subscriber' as subscriber_id
-              , 'source' as data_source
-          from plans
+          ) as plans
     expect:
       rows:
         - {coverage_plan: Gold POS Plan, coverage_type_product: POS}
