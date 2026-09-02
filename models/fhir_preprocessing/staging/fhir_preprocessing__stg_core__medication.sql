@@ -2,6 +2,7 @@
 
 select
       medication_id
+    , source_type
     , person_id
     , source_code_type
     , ndc_code
@@ -17,6 +18,7 @@ from {{ ref('core__medication') }}
 
 select
       medication_id
+    , source_type
     , person_id
     , source_code_type
     , ndc_code
@@ -32,6 +34,7 @@ from {{ ref('core__medication') }}
 
 select {% if target.type == 'fabric' %} top 0 {% else %}{% endif %}
       cast(null as {{ dbt.type_string() }} ) as medication_id
+    , cast(null as {{ dbt.type_string() }} ) as source_type
     , cast(null as {{ dbt.type_string() }} ) as person_id
     , cast(null as {{ dbt.type_string() }} ) as source_code_type
     , cast(null as {{ dbt.type_string() }} ) as ndc_code

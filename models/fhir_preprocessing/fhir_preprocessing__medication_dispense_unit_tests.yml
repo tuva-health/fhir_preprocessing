@@ -1,0 +1,45 @@
+version: 2
+
+unit_tests:
+  - name: test_fhir_medication_dispense_keeps_claims_and_clinical_ids_isolated
+    description: >-
+      Medication Dispense resource identifiers include the complete Core
+      medication grain when claims and clinical rows reuse a source ID.
+    model: fhir_preprocessing__medication_dispense
+    overrides:
+      vars:
+        claims_enabled: true
+        clinical_enabled: true
+        tuva_last_run: "2026-01-01 00:00:00"
+    given:
+      - input: ref('fhir_preprocessing__stg_core__medication')
+        format: sql
+        rows: |
+          select
+              'shared-id' as medication_id
+            , 'claims' as source_type
+            , 'person' as person_id
+            , 'ndc' as source_code_type
+            , '00000000001' as ndc_code
+            , 'Claims medication' as ndc_description
+            , 'RX-CLAIMS' as rxnorm_code
+            , 'Claims RxNorm medication' as rxnorm_description
+            , 30 as days_supply
+            , cast('2025-01-01' as date) as dispensing_date
+            , 'shared-source' as data_source
+          union all
+          select
+              'shared-id', 'clinical', 'person', 'ndc', '00000000002',
+              'Clinical medication', 'RX-CLINICAL',
+              'Clinical RxNorm medication', 30,
+              cast('2025-01-02' as date), 'shared-source'
+    expect:
+      rows:
+        - resource_internal_id: f07fa2023b6604c79112353fdd8f7db0
+          source_type: claims
+          medication_code: "00000000001"
+          data_source: shared-source
+        - resource_internal_id: 1395ae34988c740b7460c5761373917f
+          source_type: clinical
+          medication_code: "00000000002"
+          data_source: shared-source

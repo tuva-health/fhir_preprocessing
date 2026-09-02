@@ -27,3 +27,15 @@ Upgrading from an implementation that copied the medical or pharmacy claim
 identifier directly into `resource_internal_id` requires a full refresh of the
 FHIR tables. Existing Explanation of Benefit resource identifiers change once
 to adopt the source- and domain-scoped contract.
+
+## Medication Dispense identifiers
+
+Tuva Core medication records use the composite source grain
+`(medication_id, source_type, data_source)` because clinical and claims records
+can reuse the same medication identifier within one source. FHIR Medication
+Dispense preserves `source_type` and generates `resource_internal_id` as a
+collision-safe, domain-separated 32-character hash of that complete grain.
+
+Fully refresh the FHIR tables when upgrading. Existing Medication Dispense
+resource identifiers change once from the raw medication identifier to the
+source-aware hash.
