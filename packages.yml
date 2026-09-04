@@ -1,0 +1,7 @@
+packages:
+  # Used by runtime models and tests for surrogate keys, union_relations, and
+  # unique-combination tests.
+  - package: dbt-labs/dbt_utils
+    version:
+      - ">=1.3.2"
+      - "<2.0.0"

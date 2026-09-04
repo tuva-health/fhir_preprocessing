@@ -14,7 +14,7 @@ class PackageContractTest(unittest.TestCase):
         project_text = (ROOT / "dbt_project.yml").read_text()
 
         project_version = re.search(
-            r"(?m)^version: '([1-9][0-9]*\.[0-9]+\.[0-9]+"
+            r"(?m)^version: '((?:0|[1-9][0-9]*)\.[0-9]+\.[0-9]+"
             r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)'$",
             project_text,
         )
@@ -29,6 +29,14 @@ class PackageContractTest(unittest.TestCase):
         self.assertIn("Apache License", license_text)
         self.assertIn("Version 2.0, January 2004", license_text)
         self.assertIn("END OF TERMS AND CONDITIONS", license_text)
+
+    def test_runtime_dependencies_are_declared_without_owning_core(self):
+        packages_text = (ROOT / "packages.yml").read_text()
+
+        self.assertIn("package: dbt-labs/dbt_utils", packages_text)
+        self.assertIn('">=1.3.2"', packages_text)
+        self.assertIn('"<2.0.0"', packages_text)
+        self.assertNotIn("tuva-core", packages_text)
 
     def test_release_workflow_runs_package_contract(self):
         workflow_text = RELEASE_WORKFLOW.read_text()
