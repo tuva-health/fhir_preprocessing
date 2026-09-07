@@ -37,22 +37,25 @@ unions, and data tests. It is declared by this package and will be resolved by
 
 ## Installation
 
-Once this package is available on the dbt Package Hub, add it to the root
-project's `packages.yml` alongside the connector-managed Core dependency:
+Declare Tuva Core and this package once in the root project's
+`packages.yml`. Use the immutable 1.0 release tags:
 
 ```yaml
 packages:
-  - package: tuva-health/fhir_preprocessing
-    version: 0.1.0
+  - git: "https://github.com/tuva-health/tuva-core.git"
+    revision: "v1.0.0"
+  - git: "https://github.com/tuva-health/fhir_preprocessing.git"
+    revision: "v1.0.0"
 ```
 
-Before Hub registration is complete, or when testing an exact source release,
-use the immutable Git tag instead:
+After these releases are available on dbt Hub, the equivalent installation is:
 
 ```yaml
 packages:
-  - git: "https://github.com/tuva-health/fhir_preprocessing.git"
-    revision: v0.1.0
+  - package: tuva-health/the_tuva_project
+    version: 1.0.0
+  - package: tuva-health/fhir_preprocessing
+    version: 1.0.0
 ```
 
 Then install dependencies:
