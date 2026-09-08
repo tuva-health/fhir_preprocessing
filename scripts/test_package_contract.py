@@ -20,7 +20,7 @@ class PackageContractTest(unittest.TestCase):
         )
 
         self.assertIsNotNone(project_version)
-        self.assertIn('require-dbt-version: ">=1.10.5,<3.0.0"', project_text)
+        self.assertIn('require-dbt-version: [">=1.10.5", "<3.0.0"]', project_text)
         self.assertEqual(re.findall(r"(?m)^version:", project_text), ["version:"])
 
     def test_package_has_a_root_apache_license(self):
